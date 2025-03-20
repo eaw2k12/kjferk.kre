@@ -1,0 +1,35 @@
+import os
+import requests
+from flask import Flask, request, Response
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return '''
+        <h2>Simple Proxy</h2>
+        <form action="/browse" method="get">
+            <input type="text" name="url" placeholder="Enter website URL" required>
+            <button type="submit">Go</button>
+        </form>
+    '''
+
+@app.route('/browse')
+def browse():
+    url = request.args.get('url')
+    if not url:
+        return "Error: No URL provided", 400
+
+    if not url.startswith(('http://', 'https://')):
+        url = 'http://' + url
+
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}  # Pretend to be a real browser
+        response = requests.get(url, headers=headers)
+        return Response(response.content, content_type=response.headers.get('Content-Type', 'text/html'))
+    except requests.exceptions.RequestException:
+        return "Error: Could not reach the website", 500
+
+if __name__ == '__main__':
+    port = int(os.getenv("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
